@@ -10,7 +10,7 @@ export default function Home() {
   const [storyLength, setStoryLength] = useState(50);
   const [readingAge, setReadingAge] = useState(6);
   const [currentPage, setCurrentPage] = useState(0);
-  const [wordsPerPage, setWordsPerPage] = useState(8);
+  const [maxWordsPerPage, setMaxWordsPerPage] = useState(10);
   const [theme, setTheme] = useState("");
   const [specifics, setSpecifics] = useState("");
   const [repeatWords, setRepeatWords] = useState("");
@@ -24,17 +24,50 @@ export default function Home() {
     [storyText],
   );
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(words.length / Math.max(1, wordsPerPage)),
-  );
+  const pages = useMemo(() => {
+    if (words.length === 0) {
+      return [[]] as string[][];
+    }
 
-  const currentPageWordList = useMemo(() => {
-    const safeWordsPerPage = Math.max(1, wordsPerPage);
-    const start = currentPage * safeWordsPerPage;
-    const end = start + safeWordsPerPage;
-    return words.slice(start, end);
-  }, [currentPage, words, wordsPerPage]);
+    const maxWords = Math.max(5, Math.min(20, maxWordsPerPage));
+
+    const sentenceEndFlags = words.map((word) =>
+      /[.!?]["')\]]*$/.test(word),
+    );
+
+    const result: string[][] = [];
+    let index = 0;
+
+    while (index < words.length) {
+      const remaining = words.length - index;
+      const windowSize = Math.min(maxWords, remaining);
+      let end = index + windowSize; // exclusive
+
+      let breakAt = -1;
+      for (let i = end - 1; i > index; i -= 1) {
+        if (sentenceEndFlags[i]) {
+          breakAt = i + 1;
+          break;
+        }
+      }
+
+      if (breakAt === -1) {
+        breakAt = end;
+      }
+
+      result.push(words.slice(index, breakAt));
+      index = breakAt;
+    }
+
+    return result;
+  }, [words, maxWordsPerPage]);
+
+  const totalPages = pages.length || 1;
+
+  const currentPageWordList = useMemo(
+    () => pages[currentPage] ?? [],
+    [pages, currentPage],
+  );
 
   const currentPageLines = useMemo(() => {
     if (currentPageWordList.length === 0) {
@@ -590,20 +623,20 @@ export default function Home() {
                     {words.length} words total
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-700">
-                      Words per page
+                      <span className="font-medium text-slate-700">
+                      Max words per page
                     </span>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
-                      {wordsPerPage}
+                      {maxWordsPerPage}
                     </span>
                     <input
                       type="range"
                       min={5}
                       max={20}
                       step={1}
-                      value={wordsPerPage}
+                      value={maxWordsPerPage}
                       onChange={(e) => {
-                        setWordsPerPage(Number(e.target.value));
+                        setMaxWordsPerPage(Number(e.target.value));
                         goToPage(0);
                       }}
                       className="w-28 accent-indigo-500 sm:w-32"
