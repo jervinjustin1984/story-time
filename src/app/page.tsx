@@ -20,8 +20,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const words = useMemo(
-    () => storyText.trim().split(/\s+/).slice(0, storyLength),
-    [storyText, storyLength],
+    () => (storyText ? storyText.trim().split(/\s+/) : []),
+    [storyText],
   );
 
   const totalPages = Math.max(
@@ -72,6 +72,7 @@ export default function Home() {
           readingAge,
           theme,
           specifics,
+          repeatWords,
         }),
       });
 
