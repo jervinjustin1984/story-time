@@ -29,12 +29,31 @@ export default function Home() {
     Math.ceil(words.length / Math.max(1, wordsPerPage)),
   );
 
-  const currentPageWords = useMemo(() => {
+  const currentPageWordList = useMemo(() => {
     const safeWordsPerPage = Math.max(1, wordsPerPage);
     const start = currentPage * safeWordsPerPage;
     const end = start + safeWordsPerPage;
-    return words.slice(start, end).join(" ");
+    return words.slice(start, end);
   }, [currentPage, words, wordsPerPage]);
+
+  const currentPageLines = useMemo(() => {
+    if (currentPageWordList.length === 0) {
+      return [""];
+    }
+
+    if (currentPageWordList.length <= 3) {
+      return [currentPageWordList.join(" ")];
+    }
+
+    const lines: string[] = [];
+    const chunkSize = 3;
+
+    for (let i = 0; i < currentPageWordList.length; i += chunkSize) {
+      lines.push(currentPageWordList.slice(i, i + chunkSize).join(" "));
+    }
+
+    return lines;
+  }, [currentPageWordList]);
 
   const goToPage = (page: number) => {
     const nextPage = Math.min(Math.max(page, 0), totalPages - 1);
@@ -593,9 +612,14 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex-1">
-                <p className="text-2xl leading-relaxed text-slate-900 md:text-[2.25rem] md:leading-snug">
-                  {currentPageWords}
+              <div className="flex-1 flex items-center justify-center">
+                <p className="mx-auto max-w-3xl text-center text-2xl leading-relaxed text-slate-900 sm:text-3xl md:text-[2.5rem] md:leading-snug lg:text-[3rem] lg:leading-snug">
+                  {currentPageLines.map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      {index < currentPageLines.length - 1 && <br />}
+                    </span>
+                  ))}
                 </p>
               </div>
 
