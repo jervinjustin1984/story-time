@@ -7,7 +7,7 @@ const DEFAULT_PLACEHOLDER_STORY =
 
 export default function Home() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [storyLength, setStoryLength] = useState(50);
+  const [storyLength, setStoryLength] = useState(100);
   const [readingAge, setReadingAge] = useState(3);
   const [currentPage, setCurrentPage] = useState(0);
   const [maxWordsPerPage, setMaxWordsPerPage] = useState(10);
@@ -566,7 +566,10 @@ export default function Home() {
         )}
 
         {/* Book - full screen */}
-        <main className="relative flex min-h-screen flex-1 flex-col bg-white">
+        <main
+          className="relative flex min-h-screen flex-1 flex-col bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/paper-bg.png')" }}
+        >
           <section className="relative flex min-h-screen flex-1 flex-col">
             {/* Left / Right nav - vertically centered on edges */}
             <button
@@ -620,16 +623,18 @@ export default function Home() {
             <div className="flex flex-1 flex-col px-14 py-8 md:px-20 md:py-12">
               <div className="flex flex-1 flex-col items-center justify-center">
                 {currentPage === 0 ? (
-                  <div className="flex flex-col items-center gap-6">
-                    <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
-                      {storyTitle || "Your Story"}
-                    </p>
+                  <div className="flex w-full flex-1 flex-col items-center">
+                    <div className="flex flex-1 items-center justify-center">
+                      <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                        {storyTitle || "Your Story"}
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setIsConfigOpen(true)}
-                      className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                      className="mt-auto text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
                     >
-                      New Story
+                      Start a new story
                     </button>
                   </div>
                 ) : currentPage === totalPages - 1 ? (
@@ -637,7 +642,7 @@ export default function Home() {
                     <p className="mx-auto max-w-3xl text-center text-2xl font-semibold italic text-slate-600 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
                       The End
                     </p>
-                    <div className="flex flex-wrap items-center justify-center gap-4">
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                       <button
                         type="button"
                         onClick={handleStartOver}
@@ -650,7 +655,7 @@ export default function Home() {
                         onClick={() => setIsConfigOpen(true)}
                         className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
                       >
-                        New Story
+                        Start a new story
                       </button>
                     </div>
                   </div>
