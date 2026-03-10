@@ -8,7 +8,7 @@ const DEFAULT_PLACEHOLDER_STORY =
 export default function Home() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [storyLength, setStoryLength] = useState(50);
-  const [readingAge, setReadingAge] = useState(6);
+  const [readingAge, setReadingAge] = useState(3);
   const [currentPage, setCurrentPage] = useState(0);
   const [maxWordsPerPage, setMaxWordsPerPage] = useState(10);
   const [theme, setTheme] = useState("");
@@ -194,16 +194,18 @@ export default function Home() {
     <div className="flex min-h-screen bg-gradient-to-b from-sky-50 to-indigo-100">
       {/* Desktop sidebar */}
       <aside className="hidden w-72 border-r border-indigo-100 bg-white/80 px-6 py-8 shadow-sm backdrop-blur md:block">
-        <h2 className="text-xl font-semibold text-indigo-900">Story Generator</h2>
-        <p className="mt-1 text-sm text-indigo-500">
+        <h2 className="text-2xl font-semibold text-indigo-900 md:text-3xl">
+          Story Generator
+        </h2>
+        <p className="mt-1 text-base text-indigo-500">
           Set up a new story for your reader.
         </p>
 
         <div className="mt-8 space-y-6">
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-slate-700">
+            <label className="flex items-center justify-between text-base font-medium text-slate-700">
               <span>Story length</span>
-              <span className="text-xs text-slate-500">{storyLength} words</span>
+              <span className="text-sm text-slate-500">{storyLength} words</span>
             </label>
             <input
               type="range"
@@ -220,7 +222,7 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-base font-medium text-slate-700">
               Reading age
             </label>
             <select
@@ -234,7 +236,7 @@ export default function Home() {
               <option value={8}>8–9 years</option>
               <option value={10}>10+ years</option>
             </select>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-sm text-slate-500">
               This will help tailor future stories.
             </p>
           </div>
@@ -243,13 +245,13 @@ export default function Home() {
 
           <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-400">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-400">
                 Optional settings
               </h3>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-base font-medium text-slate-700">
                 Theme (optional)
               </label>
               <div className="flex items-center gap-2">
@@ -314,7 +316,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-base font-medium text-slate-700">
                 Specific things to include (optional)
               </label>
               <textarea
@@ -327,7 +329,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-base font-medium text-slate-700">
                 Specific words to repeat or rhyme (optional)
               </label>
               <input
@@ -362,7 +364,7 @@ export default function Home() {
         {/* Mobile header */}
         <header className="flex items-center justify-between border-b border-indigo-100 bg-white/80 px-4 py-3 shadow-sm backdrop-blur md:px-8">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-indigo-900 md:text-2xl">
+            <h1 className="text-2xl font-bold tracking-tight text-indigo-900 md:text-3xl">
               Story Time
             </h1>
             <p className="text-xs text-indigo-500 md:text-sm">
@@ -417,9 +419,9 @@ export default function Home() {
               className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px] md:hidden"
               onClick={() => setIsConfigOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 z-40 w-72 max-w-[80vw] border-r border-indigo-100 bg-white/95 px-4 pb-6 pt-4 shadow-xl md:hidden">
+            <div className="fixed inset-0 z-40 w-full bg-white/95 px-5 pb-6 pt-4 shadow-xl md:hidden">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-indigo-900">
+                <h2 className="text-2xl font-semibold text-indigo-900">
                   Story Generator
                 </h2>
                 <button
@@ -446,12 +448,12 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="mt-2 flex h-[calc(100%-2.5rem)] flex-col gap-4 overflow-y-auto pb-2">
-                <div className="space-y-4">
+              <div className="mt-2 flex h-[calc(100%-2.5rem)] flex-col gap-2.5 overflow-y-auto pb-2">
+                <div className="space-y-2.5">
                   <div>
-                    <label className="flex items-center justify-between text-xs font-medium text-slate-700">
+                    <label className="flex items-center justify-between text-base font-medium text-slate-700">
                       <span>Story length</span>
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-sm text-slate-500">
                         {storyLength} words
                       </span>
                     </label>
@@ -465,18 +467,18 @@ export default function Home() {
                         setStoryLength(Number(e.target.value));
                         goToPage(0);
                       }}
-                      className="mt-1.5 w-full accent-indigo-500"
+                      className="mt-1 w-full accent-indigo-500"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-700">
+                    <label className="mb-1 block text-base font-medium text-slate-700">
                       Reading age
                     </label>
                     <select
                       value={readingAge}
                       onChange={(e) => setReadingAge(Number(e.target.value))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     >
                       <option value={3}>3 years</option>
                       <option value={4}>4–5 years</option>
@@ -489,15 +491,15 @@ export default function Home() {
 
                 <div className="h-px w-full bg-indigo-50" />
 
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <div>
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-indigo-400">
+                    <h3 className="text-base font-semibold uppercase tracking-wide text-indigo-400">
                       Optional settings
                     </h3>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-700">
+                    <label className="mb-1 block text-base font-medium text-slate-700">
                       Theme (optional)
                     </label>
                     <div className="flex items-center gap-2">
@@ -506,13 +508,13 @@ export default function Home() {
                         value={theme}
                         onChange={(e) => setTheme(e.target.value)}
                         placeholder='e.g., "space", "underwater", "jungle"'
-                        className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                       />
                       <button
                         type="button"
                         onClick={handleRandomTheme}
                         disabled={isThemeGenerating}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
                         title="Surprise me with a theme"
                       >
                         <span className="sr-only">Generate random theme</span>
@@ -555,27 +557,27 @@ export default function Home() {
                       </button>
                     </div>
                     {isThemeGenerating && (
-                      <p className="mt-1 text-[11px] text-indigo-500">
+                      <p className="mt-1 text-sm text-indigo-500">
                         Finding a fun theme...
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-700">
+                    <label className="mb-1 block text-base font-medium text-slate-700">
                       Specific things to include (optional)
                     </label>
                     <textarea
                       value={specifics}
                       onChange={(e) => setSpecifics(e.target.value)}
-                      rows={3}
+                      rows={2}
                       placeholder='e.g., "I want to include a polar bear named Pablo"'
-                      className="w-full resize-none rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-700">
+                    <label className="mb-1 block text-base font-medium text-slate-700">
                       Specific words to repeat or rhyme (optional)
                     </label>
                     <input
@@ -583,7 +585,7 @@ export default function Home() {
                       value={repeatWords}
                       onChange={(e) => setRepeatWords(e.target.value)}
                       placeholder='e.g., "cook, book, took"'
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     />
                   </div>
                 </div>
@@ -594,13 +596,13 @@ export default function Home() {
                     handleGenerateStory(true);
                   }}
                   disabled={isGenerating}
-                  className="mt-auto inline-flex w-full items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="mt-auto inline-flex w-full items-center justify-center rounded-full bg-indigo-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 >
                   {isGenerating ? "Generating..." : "Generate Story"}
                 </button>
 
                 {error && (
-                  <p className="mt-1 text-[11px] text-rose-500">
+                  <p className="mt-1 text-sm text-rose-500">
                     {error}
                   </p>
                 )}
