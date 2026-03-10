@@ -691,7 +691,17 @@ export default function Home() {
             {/* Story content - centered */}
             <div className="flex flex-1 flex-col px-14 py-8 md:px-20 md:py-12">
               <div className="flex flex-1 flex-col items-center justify-center">
-                {currentPage === 0 ? (
+                {isGenerating ? (
+                  <div className="flex flex-col items-center gap-6">
+                    <p className="text-2xl font-semibold text-slate-600 sm:text-3xl md:text-[2.5rem]">
+                      Generating...
+                    </p>
+                    <div
+                      className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500"
+                      aria-hidden
+                    />
+                  </div>
+                ) : currentPage === 0 ? (
                   <div className="flex w-full flex-1 flex-col items-center">
                     <div className="flex flex-1 items-center justify-center">
                       <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
