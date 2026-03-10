@@ -364,60 +364,9 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Mobile header */}
-        <header className="flex items-center justify-between border-b border-indigo-100 bg-white/80 px-4 py-3 shadow-sm backdrop-blur md:px-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-indigo-900 md:text-3xl">
-              Story Time
-            </h1>
-            <p className="text-xs text-indigo-500 md:text-sm">
-              A cozy place to read with your child.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsConfigOpen((open) => !open)}
-            aria-label={isConfigOpen ? "Close story generator" : "Open story generator"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-indigo-700 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 md:hidden"
-          >
-            <span className="sr-only">
-              {isConfigOpen ? "Hide story generator" : "Show story generator"}
-            </span>
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M5 5.5C5 4.12 6.12 3 7.5 3H17a1 1 0 0 1 1 1v4.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M5 19h6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              <path
-                d="M9.5 15.5L17 8l2 2-7.5 7.5-3 1 1-3Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </header>
-
-        {/* Mobile settings left panel + backdrop */}
+      {/* Main content - full screen book */}
+      <div className="flex min-h-screen flex-1 flex-col">
+        {/* Mobile/overlay config panel */}
         {isConfigOpen && (
           <>
             <div
@@ -616,51 +565,95 @@ export default function Home() {
           </>
         )}
 
-        {/* Story area */}
-        <main className="flex flex-1 flex-col px-4 pb-4 pt-6 md:px-10 md:pb-8 md:pt-10">
-          <section className="flex-1 rounded-3xl bg-white/90 p-6 shadow-md ring-1 ring-indigo-100 md:p-10">
-            <div className="flex h-full flex-col">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-xs font-medium uppercase tracking-wide text-indigo-400 md:text-sm">
-                  Story page
-                </div>
+        {/* Book - full screen */}
+        <main className="relative flex min-h-screen flex-1 flex-col bg-white">
+          <section className="relative flex min-h-screen flex-1 flex-col">
+            {/* Left / Right nav - vertically centered on edges */}
+            <button
+              type="button"
+              onClick={handlePrevious}
+              disabled={currentPage === 0}
+              aria-label="Previous page"
+              className="absolute left-0 top-1/2 z-10 flex h-14 w-12 -translate-y-1/2 items-center justify-center rounded-r-lg bg-slate-100/90 text-slate-600 shadow-sm transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-40 md:h-16 md:w-14"
+            >
+              <svg
+                className="h-6 w-6 md:h-7 md:w-7"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M15 6L9 12L15 18"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={currentPage >= totalPages - 1}
+              aria-label="Next page"
+              className="absolute right-0 top-1/2 z-10 flex h-14 w-12 -translate-y-1/2 items-center justify-center rounded-l-lg bg-slate-100/90 text-slate-600 shadow-sm transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-40 md:h-16 md:w-14"
+            >
+              <svg
+                className="h-6 w-6 md:h-7 md:w-7"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M9 6L15 12L9 18"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
 
-                <div className="flex flex-col items-start gap-1 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:gap-3 md:text-xs">
-                  <span className="hidden sm:inline">
-                    {words.length} words total
-                  </span>
-                  <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-700">
-                      Max words per page
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
-                      {maxWordsPerPage}
-                    </span>
-                    <input
-                      type="range"
-                      min={5}
-                      max={20}
-                      step={1}
-                      value={maxWordsPerPage}
-                      onChange={(e) => {
-                        setMaxWordsPerPage(Number(e.target.value));
-                        goToPage(0);
-                      }}
-                      className="w-28 accent-indigo-500 sm:w-32"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 flex items-center justify-center">
+            {/* Story content - centered */}
+            <div className="flex flex-1 flex-col px-14 py-8 md:px-20 md:py-12">
+              <div className="flex flex-1 flex-col items-center justify-center">
                 {currentPage === 0 ? (
-                  <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
-                    {storyTitle || "Your Story"}
-                  </p>
+                  <div className="flex flex-col items-center gap-6">
+                    <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                      {storyTitle || "Your Story"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfigOpen(true)}
+                      className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                    >
+                      New Story
+                    </button>
+                  </div>
                 ) : currentPage === totalPages - 1 ? (
-                  <p className="mx-auto max-w-3xl text-center text-2xl font-semibold italic text-slate-600 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
-                    The End
-                  </p>
+                  <div className="flex flex-col items-center gap-6">
+                    <p className="mx-auto max-w-3xl text-center text-2xl font-semibold italic text-slate-600 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                      The End
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                      <button
+                        type="button"
+                        onClick={handleStartOver}
+                        className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                      >
+                        Start Over
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsConfigOpen(true)}
+                        className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                      >
+                        New Story
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <p className="mx-auto max-w-3xl text-center text-2xl leading-relaxed text-slate-900 sm:text-3xl md:text-[2.5rem] md:leading-snug lg:text-[3rem] lg:leading-snug">
                     {currentPageLines.map((line, index) => (
@@ -673,136 +666,34 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="mt-4 flex justify-end text-[11px] font-medium text-indigo-600 md:text-xs">
-                <span className="inline-flex h-6 items-center rounded-full bg-indigo-50 px-3">
+              {/* Footer: page counter + max words per page */}
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+                <span className="text-sm font-medium text-slate-500">
                   Page {currentPage + 1} of {totalPages}
                 </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-600">
+                    Max words per page
+                  </span>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                    {maxWordsPerPage}
+                  </span>
+                  <input
+                    type="range"
+                    min={5}
+                    max={20}
+                    step={1}
+                    value={maxWordsPerPage}
+                    onChange={(e) => {
+                      setMaxWordsPerPage(Number(e.target.value));
+                      goToPage(0);
+                    }}
+                    className="w-24 accent-indigo-500 md:w-28"
+                  />
+                </div>
               </div>
             </div>
           </section>
-
-          {/* Navigation */}
-          <nav className="mt-4 flex flex-col items-center gap-3 rounded-2xl bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-md ring-1 ring-indigo-100 md:mt-6 md:flex-row md:justify-between md:px-6 md:py-4">
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 md:text-xs">
-              <span className="hidden md:inline">
-                {words.length} words total
-              </span>
-            </div>
-
-            <div className="flex w-full items-center justify-end gap-2 md:w-auto">
-              <button
-                type="button"
-                onClick={handleStartOver}
-                title="Start over"
-                className="hidden h-9 w-9 items-center justify-center rounded-full border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 md:inline-flex"
-              >
-                <span className="sr-only">Start over</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M4 4v6h6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M5 13a7 7 0 1 0 2-5"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePrevious}
-                disabled={currentPage === 0}
-                title="Previous page"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-300"
-              >
-                <span className="sr-only">Previous page</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M15 6L9 12L15 18"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={currentPage >= totalPages - 1}
-                title="Next page"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-200"
-              >
-                <span className="sr-only">Next page</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M9 6L15 12L9 18"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleStartOver}
-                title="Start over"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 md:hidden"
-              >
-                <span className="sr-only">Start over</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M4 4v6h6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M5 13a7 7 0 1 0 2-5"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </nav>
         </main>
       </div>
     </div>
