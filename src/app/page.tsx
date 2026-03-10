@@ -15,6 +15,7 @@ export default function Home() {
   const [specifics, setSpecifics] = useState("");
   const [repeatWords, setRepeatWords] = useState("");
   const [storyText, setStoryText] = useState<string>(DEFAULT_PLACEHOLDER_STORY);
+  const [storyTitle, setStoryTitle] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isThemeGenerating, setIsThemeGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +63,15 @@ export default function Home() {
     return result;
   }, [words, maxWordsPerPage]);
 
-  const totalPages = pages.length || 1;
+  const totalPages = Math.max(1, 1 + pages.length + 1);
 
-  const currentPageWordList = useMemo(
-    () => pages[currentPage] ?? [],
-    [pages, currentPage],
-  );
+  const currentPageWordList = useMemo(() => {
+    if (currentPage === 0 || currentPage === totalPages - 1) {
+      return [];
+    }
+    const storyPageIndex = currentPage - 1;
+    return pages[storyPageIndex] ?? [];
+  }, [pages, currentPage, totalPages]);
 
   const currentPageLines = useMemo(() => {
     if (currentPageWordList.length === 0) {
@@ -133,13 +137,14 @@ export default function Home() {
         throw new Error(data.error || "Failed to generate story.");
       }
 
-      const data: { story: string } = await response.json();
+      const data: { story: string; title?: string } = await response.json();
 
       if (!data.story || typeof data.story !== "string") {
         throw new Error("Story text was missing from the response.");
       }
 
       setStoryText(data.story);
+      setStoryTitle(typeof data.title === "string" ? data.title.trim() : "");
       goToPage(0);
 
       if (closePanel) {
@@ -648,14 +653,24 @@ export default function Home() {
               </div>
 
               <div className="flex-1 flex items-center justify-center">
-                <p className="mx-auto max-w-3xl text-center text-2xl leading-relaxed text-slate-900 sm:text-3xl md:text-[2.5rem] md:leading-snug lg:text-[3rem] lg:leading-snug">
-                  {currentPageLines.map((line, index) => (
-                    <span key={index}>
-                      {line}
-                      {index < currentPageLines.length - 1 && <br />}
-                    </span>
-                  ))}
-                </p>
+                {currentPage === 0 ? (
+                  <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                    {storyTitle || "Your Story"}
+                  </p>
+                ) : currentPage === totalPages - 1 ? (
+                  <p className="mx-auto max-w-3xl text-center text-2xl font-semibold italic text-slate-600 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                    The End
+                  </p>
+                ) : (
+                  <p className="mx-auto max-w-3xl text-center text-2xl leading-relaxed text-slate-900 sm:text-3xl md:text-[2.5rem] md:leading-snug lg:text-[3rem] lg:leading-snug">
+                    {currentPageLines.map((line, index) => (
+                      <span key={index}>
+                        {line}
+                        {index < currentPageLines.length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 flex justify-end text-[11px] font-medium text-indigo-600 md:text-xs">
