@@ -53,7 +53,9 @@ export async function POST(request: Request) {
 
     promptParts.push(
       "Use simple, age-appropriate language and short sentences.",
-      "Return only the story text, no introductions, no bullet points, and no closing commentary.",
+      "Your response must have exactly two parts separated by a blank line:",
+      "1) First line: a fun, kid-friendly book title for the story (nothing else on that line). The title does NOT count toward the story word count.",
+      "2) After the blank line: the story text only. No introductions, no bullet points, no closing commentary.",
     );
 
     const prompt = promptParts.join(" ");
@@ -74,11 +76,24 @@ export async function POST(request: Request) {
       temperature: 0.9,
     });
 
-    const story =
+    const raw =
       completion.choices[0]?.message?.content?.trim() ??
       "Once upon a time, something went wrong and the story could not be generated.";
 
-    return NextResponse.json({ story });
+    const blankLineIndex = raw.indexOf("\n\n");
+    let title = "";
+    let story: string;
+    if (blankLineIndex > 0) {
+      title = raw.slice(0, blankLineIndex).replace(/\n/g, " ").trim();
+      story = raw.slice(blankLineIndex + 2).trim();
+    } else {
+      story = raw;
+    }
+    if (!story) {
+      story = "Once upon a time, something went wrong and the story could not be generated.";
+    }
+
+    return NextResponse.json({ story, title });
   } catch (error) {
     console.error("Error generating story:", error);
     return NextResponse.json(
