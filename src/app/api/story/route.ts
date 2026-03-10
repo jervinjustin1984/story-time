@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       repeatWords?: string;
     } = body;
 
-    const safeStoryLength = Math.max(10, Math.min(200, Number(storyLength) || 100));
+    const safeStoryLength = Math.max(10, Math.min(500, Number(storyLength) || 150));
     const safeReadingAge = Math.max(3, Math.min(12, Number(readingAge) || 6));
 
     const promptParts = [
