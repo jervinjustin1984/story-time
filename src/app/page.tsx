@@ -23,7 +23,11 @@ function loadConfig() {
     const data = JSON.parse(raw);
     return {
       storyLength: Number(data.storyLength) || 150,
-      readingAge: Number(data.readingAge) ?? 6,
+      readingAge: (() => {
+        const age = Number(data.readingAge) ?? 6;
+        if (age === 3) return 4; /* 3 years removed, map to 4–5 */
+        return age;
+      })(),
       theme: typeof data.theme === "string" ? data.theme : "",
       specifics: typeof data.specifics === "string" ? data.specifics : "",
       repeatWords: typeof data.repeatWords === "string" ? data.repeatWords : "",
@@ -58,6 +62,325 @@ const DEFAULT_CONFIG = {
   repeatWords: "",
   maxWordsPerPage: 15,
 };
+
+const READING_AGES = [
+  { value: 4, label: "4–5 years" },
+  { value: 6, label: "6–7 years" },
+  { value: 8, label: "8–9 years" },
+  { value: 10, label: "10+ years" },
+] as const;
+
+const ST_INPUT_CLASS =
+  "st-input w-full rounded-lg border bg-[var(--st-bg-input)] border-[var(--st-border-input)] text-[13px] text-[#c8bfe0] outline-none placeholder:text-[var(--st-text-hint)] box-border";
+
+function ShuffleIcon() {
+  return (
+    <svg
+      width={17}
+      height={17}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <polyline points="17 1 21 1 21 5" />
+      <path d="M3 11V3a2 2 0 0 1 2-2h8" />
+      <polyline points="21 13 21 21 13 21" />
+      <path d="M11 21H5a2 2 0 0 1-2-2v-8" />
+    </svg>
+  );
+}
+
+function SettingsPanel({
+  storyLength,
+  setStoryLength,
+  readingAge,
+  setReadingAge,
+  theme,
+  setTheme,
+  specifics,
+  setSpecifics,
+  repeatWords,
+  setRepeatWords,
+  maxWordsPerPage,
+  setMaxWordsPerPage,
+  onStoryLengthChange,
+  onMaxWordsPerPageChange,
+  handleRandomTheme,
+  handleGenerateStory,
+  isThemeGenerating,
+  isGenerating,
+  error,
+  onClose,
+  isMobile,
+}: {
+  storyLength: number;
+  setStoryLength: (v: number) => void;
+  readingAge: number;
+  setReadingAge: (v: number) => void;
+  theme: string;
+  setTheme: (v: string) => void;
+  specifics: string;
+  setSpecifics: (v: string) => void;
+  repeatWords: string;
+  setRepeatWords: (v: string) => void;
+  maxWordsPerPage: number;
+  setMaxWordsPerPage: (v: number) => void;
+  onStoryLengthChange: (v: number) => void;
+  onMaxWordsPerPageChange: (v: number) => void;
+  handleRandomTheme: () => void;
+  handleGenerateStory: (closePanel?: boolean) => void;
+  isThemeGenerating: boolean;
+  isGenerating: boolean;
+  error: string | null;
+  onClose?: () => void;
+  isMobile?: boolean;
+}) {
+  return (
+    <div
+      className="flex min-h-0 flex-1 flex-col st-settings-panel"
+      data-mobile={isMobile ? "true" : undefined}
+    >
+      <header
+        className="flex items-start justify-between border-b border-[var(--st-border-subtle)] px-5 pb-3.5 pt-5 st-settings-header"
+      >
+        <div>
+          <h2
+            className="m-0 mb-0.5 font-semibold tracking-tight text-[var(--st-gold)] st-settings-title"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", letterSpacing: "-0.01em" }}
+          >
+            Story Time
+          </h2>
+          <p
+            className="m-0 text-[var(--st-text-muted)] st-settings-tagline"
+            style={{ fontFamily: "sans-serif", letterSpacing: "0.05em" }}
+          >
+            bedtime stories, just for you
+          </p>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Close story settings"
+            onClick={onClose}
+            className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--st-text-muted)] hover:bg-white/5 md:hidden"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M6 6L18 18M6 18L18 6"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 st-settings-body">
+        <div className="st-settings-sections">
+          <div>
+            <label
+              className="st-settings-label mb-2 flex items-center justify-between uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              <span>Story length</span>
+              <span
+                className="text-xs font-medium text-[var(--st-gold)]"
+                style={{ fontFamily: "sans-serif" }}
+              >
+                {storyLength} words
+              </span>
+            </label>
+            <input
+              type="range"
+              min={20}
+              max={500}
+              step={10}
+              value={storyLength}
+              onChange={(e) => {
+                setStoryLength(Number(e.target.value));
+                onStoryLengthChange(Number(e.target.value));
+              }}
+              className="st-slider mt-2"
+            />
+          </div>
+
+          <div className="st-settings-section">
+            <label
+              className="st-settings-label mb-2 block uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              Reading age
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {READING_AGES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setReadingAge(value)}
+                  className="cursor-pointer rounded-full border px-3 py-1.5 text-xs font-normal transition-colors"
+                  style={{
+                    fontFamily: "sans-serif",
+                    padding: "5px 12px",
+                    border: "1px solid var(--st-border-input)",
+                    color: "var(--st-text-muted)",
+                    background: "transparent",
+                    ...(readingAge === value
+                      ? {
+                          background: "var(--st-gold-tint)",
+                          borderColor: "var(--st-gold-border)",
+                          color: "var(--st-gold)",
+                          fontWeight: 500,
+                        }
+                      : {}),
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="st-settings-divider" />
+          <h3 className="st-settings-optional-title">Optional Settings</h3>
+
+          <div className="st-settings-section">
+            <label
+              className="st-settings-label mb-2 block uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              Theme
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                placeholder='e.g., "space", "underwater", "jungle"'
+                className={ST_INPUT_CLASS}
+              />
+              <button
+                type="button"
+                onClick={handleRandomTheme}
+                disabled={isThemeGenerating}
+                className="flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--st-border-input)] text-[var(--st-text-muted)]"
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                }}
+                title="Surprise me with a theme"
+              >
+                <span className="sr-only">Generate random theme</span>
+                <ShuffleIcon />
+              </button>
+            </div>
+            {isThemeGenerating && (
+              <p className="mt-1 text-[11px] text-[var(--st-text-muted)]">
+                Finding a fun theme...
+              </p>
+            )}
+          </div>
+
+          <div className="st-settings-section">
+            <label
+              className="st-settings-label mb-2 block uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              Things to include
+            </label>
+            <textarea
+              value={specifics}
+              onChange={(e) => setSpecifics(e.target.value)}
+              rows={isMobile ? 2 : 3}
+              placeholder='e.g., "I want to include a polar bear named Pablo"'
+              className={`${ST_INPUT_CLASS} resize-none`}
+            />
+          </div>
+
+          <div className="st-settings-section">
+            <label
+              className="st-settings-label mb-2 block uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              Words to rhyme
+            </label>
+            <input
+              type="text"
+              value={repeatWords}
+              onChange={(e) => setRepeatWords(e.target.value)}
+              placeholder='e.g., "cook, book, took"'
+              className={ST_INPUT_CLASS}
+            />
+          </div>
+
+          <div className="st-settings-section">
+            <label
+              className="st-settings-label mb-2 flex items-center justify-between uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+              style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
+            >
+              <span>Max words per page</span>
+              <span
+                className="text-xs font-medium text-[var(--st-gold)]"
+                style={{ fontFamily: "sans-serif" }}
+              >
+                {maxWordsPerPage} words
+              </span>
+            </label>
+            <input
+              type="range"
+              min={5}
+              max={30}
+              step={1}
+              value={maxWordsPerPage}
+              onChange={(e) => {
+                setMaxWordsPerPage(Number(e.target.value));
+                onMaxWordsPerPageChange(Number(e.target.value));
+              }}
+              className="st-slider mt-2"
+            />
+          </div>
+        </div>
+      </div>
+
+      <footer
+        className="st-settings-footer border-t border-[var(--st-border-subtle)] bg-[var(--st-bg-page)] shrink-0 px-5 pb-[18px] pt-3.5"
+        style={{ padding: "14px 20px 18px" }}
+      >
+        <button
+          type="button"
+          onClick={() => (onClose ? handleGenerateStory(true) : handleGenerateStory())}
+          disabled={isGenerating}
+          className="block w-full cursor-pointer rounded-xl border-none py-3.5 font-sans text-sm font-semibold !bg-[#e8d5a3] !text-[#1a1635] disabled:cursor-not-allowed"
+          style={{
+            padding: "14px",
+            fontFamily: "sans-serif",
+            WebkitAppearance: "none",
+            appearance: "none",
+          }}
+        >
+          {isGenerating ? (
+            <span
+              className="animate-[pulse_1.2s_ease-in-out_infinite]"
+              style={{ animation: "pulse 1.2s ease-in-out infinite" }}
+            >
+              Writing your story…
+            </span>
+          ) : (
+            "✦ Generate Story"
+          )}
+        </button>
+        {error && (
+          <p className="mt-2 text-xs text-rose-500">
+            {error}
+          </p>
+        )}
+      </footer>
+    </div>
+  );
+}
 
 export default function Home() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -155,7 +478,7 @@ export default function Home() {
       return [[]] as string[][];
     }
 
-    const maxWords = Math.max(5, Math.min(20, maxWordsPerPage));
+    const maxWords = Math.max(5, Math.min(30, maxWordsPerPage));
 
     const sentenceEndFlags = words.map((word) =>
       /[.!?]["')\]]*$/.test(word),
@@ -321,144 +644,34 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-sky-50 to-indigo-100">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-72 border-r border-indigo-100 bg-white/80 px-6 py-8 shadow-sm backdrop-blur md:block">
-        <h2 className="text-2xl font-semibold text-indigo-900 md:text-3xl">
-          Story Generator
-        </h2>
-        <p className="mt-1 text-base text-indigo-500">
-          Set up a new story for your reader.
-        </p>
-
-        <div className="mt-8 space-y-6">
-          <div>
-            <label className="flex items-center justify-between text-base font-medium text-slate-700">
-              <span>Story length</span>
-              <span className="text-sm text-slate-500">{storyLength} words</span>
-            </label>
-            <input
-              type="range"
-              min={20}
-              max={500}
-              step={10}
-              value={storyLength}
-              onChange={(e) => {
-                setStoryLength(Number(e.target.value));
-                goToPage(0);
-              }}
-              className="mt-2 w-full accent-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-base font-medium text-slate-700">
-              Reading age
-            </label>
-            <select
-              value={readingAge}
-              onChange={(e) => setReadingAge(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-            >
-              <option value={3}>3 years</option>
-              <option value={4}>4–5 years</option>
-              <option value={6}>6–7 years</option>
-              <option value={8}>8–9 years</option>
-              <option value={10}>10+ years</option>
-            </select>
-            <p className="mt-1 text-sm text-slate-500">
-              This will help tailor future stories.
-            </p>
-          </div>
-
-          <div className="h-px w-full bg-indigo-50" />
-
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-400">
-                Optional settings
-              </h3>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-base font-medium text-slate-700">
-                Theme (optional)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                  placeholder='e.g., "space", "underwater", "jungle"'
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                />
-                <button
-                  type="button"
-                  onClick={handleRandomTheme}
-                  disabled={isThemeGenerating}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  title="Surprise me with a theme"
-                >
-                  <span className="sr-only">Generate random theme</span>
-                  <img
-                    src="/dice-icon.png"
-                    alt=""
-                    className="h-5 w-5 object-contain"
-                    width={20}
-                    height={20}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              {isThemeGenerating && (
-                <p className="mt-1 text-[11px] text-indigo-500">
-                  Finding a fun theme...
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-base font-medium text-slate-700">
-                Specific things to include (optional)
-              </label>
-              <textarea
-                value={specifics}
-                onChange={(e) => setSpecifics(e.target.value)}
-                rows={3}
-                placeholder='e.g., "I want to include a polar bear named Pablo"'
-                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-base font-medium text-slate-700">
-                Specific words to repeat or rhyme (optional)
-              </label>
-              <input
-                type="text"
-                value={repeatWords}
-                onChange={(e) => setRepeatWords(e.target.value)}
-                placeholder='e.g., "cook, book, took"'
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleGenerateStory()}
-            disabled={isGenerating}
-            className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-          >
-            {isGenerating ? "Generating..." : "Generate Story"}
-          </button>
-
-          {error && (
-            <p className="mt-2 text-xs text-rose-500">
-              {error}
-            </p>
-          )}
-        </div>
+    <div className="flex min-h-screen">
+      {/* Desktop sidebar - Settings view */}
+      <aside
+        className="flex hidden w-72 flex-col md:flex"
+        style={{ backgroundColor: "var(--st-bg-page)" }}
+      >
+        <SettingsPanel
+          storyLength={storyLength}
+          setStoryLength={setStoryLength}
+          readingAge={readingAge}
+          setReadingAge={setReadingAge}
+          theme={theme}
+          setTheme={setTheme}
+          specifics={specifics}
+          setSpecifics={setSpecifics}
+          repeatWords={repeatWords}
+          setRepeatWords={setRepeatWords}
+          maxWordsPerPage={maxWordsPerPage}
+          setMaxWordsPerPage={setMaxWordsPerPage}
+          onStoryLengthChange={() => goToPage(0)}
+          onMaxWordsPerPageChange={() => goToPage(0)}
+          handleRandomTheme={handleRandomTheme}
+          handleGenerateStory={handleGenerateStory}
+          isThemeGenerating={isThemeGenerating}
+          isGenerating={isGenerating}
+          error={error}
+          isMobile={false}
+        />
       </aside>
 
       {/* Main content - full screen book */}
@@ -470,276 +683,140 @@ export default function Home() {
               className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px] md:hidden"
               onClick={() => setIsConfigOpen(false)}
             />
-            <div className="fixed inset-0 z-40 w-full bg-white/95 px-5 pb-6 pt-4 shadow-xl md:hidden">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-indigo-900">
-                  Story Generator
-                </h2>
-                <button
-                  type="button"
-                  aria-label="Close story settings"
-                  onClick={() => setIsConfigOpen(false)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M6 6L18 18M6 18L18 6"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="mt-2 flex h-[calc(100%-2.5rem)] flex-col gap-2.5 overflow-y-auto pb-2">
-                <div className="space-y-2.5">
-                  <div>
-                    <label className="flex items-center justify-between text-base font-medium text-slate-700">
-                      <span>Story length</span>
-                      <span className="text-sm text-slate-500">
-                        {storyLength} words
-                      </span>
-                    </label>
-                    <input
-                      type="range"
-                      min={20}
-                      max={500}
-                      step={10}
-                      value={storyLength}
-                      onChange={(e) => {
-                        setStoryLength(Number(e.target.value));
-                        goToPage(0);
-                      }}
-                      className="mt-1 w-full accent-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-base font-medium text-slate-700">
-                      Reading age
-                    </label>
-                    <select
-                      value={readingAge}
-                      onChange={(e) => setReadingAge(Number(e.target.value))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    >
-                      <option value={3}>3 years</option>
-                      <option value={4}>4–5 years</option>
-                      <option value={6}>6–7 years</option>
-                      <option value={8}>8–9 years</option>
-                      <option value={10}>10+ years</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="h-px w-full bg-indigo-50" />
-
-                <div className="space-y-2.5">
-                  <div>
-                    <h3 className="text-base font-semibold uppercase tracking-wide text-indigo-400">
-                      Optional settings
-                    </h3>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-base font-medium text-slate-700">
-                      Theme (optional)
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={theme}
-                        onChange={(e) => setTheme(e.target.value)}
-                        placeholder='e.g., "space", "underwater", "jungle"'
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRandomTheme}
-                        disabled={isThemeGenerating}
-                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        title="Surprise me with a theme"
-                      >
-                        <span className="sr-only">Generate random theme</span>
-                        <img
-                          src="/dice-icon.png"
-                          alt=""
-                          className="h-5 w-5 object-contain"
-                          width={20}
-                          height={20}
-                          aria-hidden
-                        />
-                      </button>
-                    </div>
-                    {isThemeGenerating && (
-                      <p className="mt-1 text-sm text-indigo-500">
-                        Finding a fun theme...
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-base font-medium text-slate-700">
-                      Specific things to include (optional)
-                    </label>
-                    <textarea
-                      value={specifics}
-                      onChange={(e) => setSpecifics(e.target.value)}
-                      rows={2}
-                      placeholder='e.g., "I want to include a polar bear named Pablo"'
-                      className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-base font-medium text-slate-700">
-                      Specific words to repeat or rhyme (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={repeatWords}
-                      onChange={(e) => setRepeatWords(e.target.value)}
-                      placeholder='e.g., "cook, book, took"'
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleGenerateStory(true);
-                  }}
-                  disabled={isGenerating}
-                  className="mt-auto inline-flex w-full items-center justify-center rounded-full bg-indigo-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                >
-                  {isGenerating ? "Generating..." : "Generate Story"}
-                </button>
-
-                {error && (
-                  <p className="mt-1 text-sm text-rose-500">
-                    {error}
-                  </p>
-                )}
-              </div>
+            <div
+              className="fixed inset-0 z-40 flex flex-col md:hidden"
+              style={{ backgroundColor: "var(--st-bg-page)" }}
+            >
+              <SettingsPanel
+                storyLength={storyLength}
+                setStoryLength={setStoryLength}
+                readingAge={readingAge}
+                setReadingAge={setReadingAge}
+                theme={theme}
+                setTheme={setTheme}
+                specifics={specifics}
+                setSpecifics={setSpecifics}
+                repeatWords={repeatWords}
+                setRepeatWords={setRepeatWords}
+                maxWordsPerPage={maxWordsPerPage}
+                setMaxWordsPerPage={setMaxWordsPerPage}
+                onStoryLengthChange={() => goToPage(0)}
+                onMaxWordsPerPageChange={() => goToPage(0)}
+                handleRandomTheme={handleRandomTheme}
+                handleGenerateStory={handleGenerateStory}
+                isThemeGenerating={isThemeGenerating}
+                isGenerating={isGenerating}
+                error={error}
+                onClose={() => setIsConfigOpen(false)}
+                isMobile={true}
+              />
             </div>
           </>
         )}
 
-        {/* Book - full screen */}
+        {/* Reading view - full-bleed parchment */}
         <main
-          className="relative flex min-h-screen flex-1 flex-col bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/paper-bg.png')" }}
+          className="relative flex min-h-screen flex-1 flex-col overflow-hidden"
+          style={{ backgroundColor: "var(--st-parchment)", width: "100%", height: "100vh" }}
         >
-          <section className="relative flex min-h-screen flex-1 flex-col">
-            {/* Left / Right nav - vertically centered on edges */}
+          {/* Three-column row: left arrow | content | right arrow */}
+          <div className="flex min-h-0 flex-1 items-stretch overflow-hidden">
+            {/* Left nav arrow */}
             <button
               type="button"
               onClick={handlePrevious}
               disabled={currentPage === 0}
               aria-label="Previous page"
-              className="absolute left-0 top-1/2 z-10 flex h-14 w-12 -translate-y-1/2 items-center justify-center rounded-r-lg bg-slate-100/90 text-slate-600 shadow-sm transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-40 md:h-16 md:w-14"
+              className="flex w-[54px] shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0 outline-none disabled:cursor-default"
             >
               <svg
-                className="h-6 w-6 md:h-7 md:w-7"
+                className="h-6 w-6"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+                stroke={currentPage === 0 ? "rgba(140, 125, 96, 0.18)" : "#8c7d60"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
               >
-                <path
-                  d="M15 6L9 12L15 18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={currentPage >= totalPages - 1}
-              aria-label="Next page"
-              className="absolute right-0 top-1/2 z-10 flex h-14 w-12 -translate-y-1/2 items-center justify-center rounded-l-lg bg-slate-100/90 text-slate-600 shadow-sm transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-40 md:h-16 md:w-14"
-            >
-              <svg
-                className="h-6 w-6 md:h-7 md:w-7"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M9 6L15 12L9 18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
 
-            {/* Story content - centered */}
-            <div className="flex flex-1 flex-col px-14 py-8 md:px-20 md:py-12">
+            {/* Page content area */}
+            <div
+              className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto st-scroll-content"
+              style={{ padding: "60px 4px 72px" }}
+            >
               <div className="flex flex-1 flex-col items-center justify-center">
                 {isGenerating ? (
                   <div className="flex flex-col items-center gap-6">
-                    <p className="text-2xl font-semibold text-slate-600 sm:text-3xl md:text-[2.5rem]">
+                    <p
+                      className="text-center font-serif text-2xl font-semibold text-[var(--st-ink)] sm:text-3xl"
+                      style={{ fontFamily: "Georgia, serif" }}
+                    >
                       Generating...
                     </p>
                     <div
-                      className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500"
+                      className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--st-ink-faint)] border-t-[var(--st-ink-muted)]"
                       aria-hidden
                     />
                   </div>
                 ) : currentPage === 0 ? (
-                  <div className="flex w-full flex-1 flex-col items-center">
-                    <div className="flex flex-1 items-center justify-center">
-                      <p className="mx-auto max-w-3xl text-center text-2xl font-semibold leading-snug text-indigo-900 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
-                        {storyTitle || "Your Story"}
-                      </p>
-                    </div>
+                  <div className="relative flex w-full flex-1 items-center justify-center">
+                    <p
+                      className="mx-auto max-w-3xl text-center font-serif text-[26px] font-bold text-[var(--st-ink)]"
+                      style={{ fontFamily: "Georgia, serif" }}
+                    >
+                      {storyTitle || "Your Story"}
+                    </p>
                     <button
                       type="button"
                       onClick={() => setIsConfigOpen(true)}
-                      className="mt-auto text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                      className="st-link absolute bottom-0 left-0 right-0 text-center"
+                      style={{ paddingBottom: "36px" }}
                     >
                       Start a new story
                     </button>
                   </div>
                 ) : currentPage === totalPages - 1 ? (
-                  <div className="flex flex-col items-center gap-6">
-                    <p className="mx-auto max-w-3xl text-center text-2xl font-semibold italic text-slate-600 sm:text-3xl md:text-[2.5rem] lg:text-[3rem]">
+                  <div className="relative flex w-full flex-1 items-center justify-center">
+                    <p
+                      className="mx-auto max-w-3xl text-center font-serif text-[30px] font-bold italic text-[var(--st-ink)]"
+                      style={{ fontFamily: "Georgia, serif" }}
+                    >
                       The End
                     </p>
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                    <div
+                      className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-6"
+                      style={{ paddingBottom: "36px", gap: "24px" }}
+                    >
                       <button
                         type="button"
                         onClick={handleStartOver}
-                        className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                        className="st-link"
                       >
-                        Start Over
+                        Start over
                       </button>
+                      <span className="st-link-muted">·</span>
                       <button
                         type="button"
                         onClick={() => setIsConfigOpen(true)}
-                        className="text-base font-medium text-indigo-600 underline decoration-indigo-400 underline-offset-2 hover:text-indigo-700 hover:decoration-indigo-500"
+                        className="st-link"
                       >
-                        Start a new story
+                        Create a new story
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="mx-auto max-w-3xl text-center text-2xl leading-relaxed text-slate-900 sm:text-3xl md:text-[2.5rem] md:leading-snug lg:text-[3rem] lg:leading-snug">
+                  <p
+                    className="st-story-text mx-auto max-w-3xl text-center font-serif text-[var(--st-ink)]"
+                    style={{
+                      fontFamily: "Georgia, serif",
+                      lineHeight: 1.95,
+                      margin: 0,
+                    }}
+                  >
                     {currentPageLines.map((line, index) => (
                       <span key={index}>
                         {line}
@@ -749,35 +826,49 @@ export default function Home() {
                   </p>
                 )}
               </div>
-
-              {/* Footer: page counter + max words per page */}
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-                <span className="text-sm font-medium text-slate-500">
-                  Page {currentPage + 1} of {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-slate-600">
-                    Max per page
-                  </span>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                    {maxWordsPerPage}
-                  </span>
-                  <input
-                    type="range"
-                    min={5}
-                    max={20}
-                    step={1}
-                    value={maxWordsPerPage}
-                    onChange={(e) => {
-                      setMaxWordsPerPage(Number(e.target.value));
-                      goToPage(0);
-                    }}
-                    className="w-24 accent-indigo-500 md:w-28"
-                  />
-                </div>
-              </div>
             </div>
-          </section>
+
+            {/* Right nav arrow */}
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={currentPage >= totalPages - 1}
+              aria-label="Next page"
+              className="flex w-[54px] shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0 outline-none disabled:cursor-default"
+            >
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={currentPage >= totalPages - 1 ? "rgba(140, 125, 96, 0.18)" : "#8c7d60"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Dot progress indicators */}
+          <div
+            className="pointer-events-none absolute flex items-center justify-center gap-[7px]"
+            style={{ bottom: "22px", left: 0, right: 0 }}
+          >
+            {Array.from({ length: totalPages }, (_, i) => (
+              <div
+                key={i}
+                className="rounded-full transition-all duration-200"
+                style={{
+                  width: i === currentPage ? 20 : 7,
+                  height: 7,
+                  borderRadius: i === currentPage ? "3px" : "50%",
+                  background: i === currentPage ? "#8c7d60" : "rgba(61, 43, 31, 0.15)",
+                }}
+              />
+            ))}
+          </div>
         </main>
       </div>
     </div>

@@ -3,6 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Story Time design tokens */
+  --st-bg-page: #1a1635;
+  --st-bg-sidebar: #13102a;
+  --st-bg-input: rgba(255, 255, 255, 0.05);
+  --st-gold: #e8d5a3;
+  --st-gold-border: rgba(232, 213, 163, 0.4);
+  --st-gold-tint: rgba(232, 213, 163, 0.12);
+  --st-text-primary: #e8d5a3;
+  --st-text-muted: #7a6fa0;
+  --st-text-hint: #4a4270;
+  --st-border-subtle: rgba(255, 255, 255, 0.07);
+  --st-border-input: rgba(255, 255, 255, 0.1);
+  --st-parchment: #fdf6e3;
+  --st-ink: #3d2b1f;
+  --st-ink-muted: #8c7d60;
+  --st-ink-faint: rgba(61, 43, 31, 0.15);
 }
 
 @theme inline {
@@ -23,4 +39,176 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Story Time - Settings slider track & thumb */
+.st-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+}
+
+.st-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--st-gold);
+  cursor: pointer;
+}
+
+.st-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--st-gold);
+  cursor: pointer;
+  border: none;
+}
+
+/* Story Time - Text inputs base */
+.st-input {
+  padding: 9px 12px;
+}
+
+/* Story Time - Text input focus */
+.st-input:focus {
+  border-color: var(--st-gold-border);
+  box-shadow: 0 0 0 3px var(--st-gold-tint);
+}
+
+/* Story Time - Plain text link (reading view) */
+.st-link {
+  font-family: sans-serif;
+  font-size: 13px;
+  color: var(--st-ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.st-link-muted {
+  font-family: sans-serif;
+  font-size: 13px;
+  color: var(--st-ink-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.st-scroll-content {
+  scrollbar-width: none;
+}
+
+.st-scroll-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Story text - scales to ~75% of reading pane height */
+.st-story-text {
+  font-size: clamp(20px, 5.5vh, 32px);
+}
+
+/* Settings panel - base */
+.st-settings-header {
+  padding: 20px 20px 14px;
+}
+.st-settings-title {
+  font-size: 28px;
+}
+.st-settings-tagline {
+  font-size: 11px;
+}
+.st-settings-body {
+  padding: 24px 20px 28px;
+}
+.st-settings-label {
+  font-size: 12px;
+}
+.st-settings-divider {
+  height: 1px;
+  background: var(--st-border-subtle);
+  margin: 36px 0 16px;
+}
+.st-settings-optional-title {
+  font-family: sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-text-muted);
+  margin: 0 0 20px;
+}
+.st-settings-sections > .st-settings-section {
+  margin-top: 28px;
+}
+
+/* Settings panel - compact on iPhone 15 and similar (viewport height ≤ 900px) */
+@media (max-height: 900px) {
+  .st-settings-panel .st-settings-header {
+    padding: 12px 16px 10px !important;
+  }
+  .st-settings-panel .st-settings-title {
+    font-size: 22px !important;
+  }
+  .st-settings-panel .st-settings-tagline {
+    font-size: 10px !important;
+  }
+  .st-settings-panel .st-settings-body {
+    padding: 10px 16px !important;
+  }
+  .st-settings-panel .st-settings-sections > div {
+    margin-top: 12px !important;
+  }
+  .st-settings-panel .st-settings-sections > div:first-child {
+    margin-top: 0 !important;
+  }
+  .st-settings-panel .st-input,
+  .st-settings-panel textarea.st-input {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+  .st-settings-panel .st-slider {
+    margin-top: 4px !important;
+  }
+  .st-settings-panel .st-settings-footer {
+    padding: 10px 16px 12px !important;
+  }
+  .st-settings-panel .st-settings-footer button {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+  .st-settings-panel .st-settings-section {
+    margin-top: 12px !important;
+  }
+  .st-settings-panel .st-settings-divider {
+    margin: 28px 0 12px !important;
+  }
+  .st-settings-panel .st-settings-optional-title {
+    margin-bottom: 14px !important;
+    font-size: 10px !important;
+  }
+  .st-settings-panel .st-settings-label {
+    font-size: 11px !important;
+  }
 }
