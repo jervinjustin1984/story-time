@@ -1,29 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Lora:ital@0;1&family=DM+Sans:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-
-  /* Cozy Storybook Night palette */
-  --color-bg-page: #1a1635;
-  --color-bg-sidebar: #13102a;
-  --color-bg-card: #242044;
-  --color-bg-input: #1e1b38;
-
-  --color-gold: #f5c842;
-  --color-gold-hover: #e6b52e;
-  --color-gold-muted: rgba(245, 200, 66, 0.15);
-
-  --color-text-primary: #f0ead6;
-  --color-text-secondary: #9b93c4;
-  --color-text-hint: #5c5585;
-
-  --color-border: rgba(245, 200, 66, 0.15);
-  --color-border-strong: rgba(245, 200, 66, 0.3);
-
-  --color-story-bg: #fdf6e3;
-  --color-story-text: #3d2b1f;
 }
 
 @theme inline {
@@ -33,126 +12,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
-html,
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
 body {
-  background-color: var(--color-bg-page);
-  background-image: radial-gradient(
-    circle,
-    rgba(245, 200, 66, 0.08) 1px,
-    transparent 1px
-  );
-  background-size: 32px 32px;
-  color: var(--color-text-primary);
-  font-family: "DM Sans", sans-serif;
-}
-
-/* Generate button styles */
-.generate-button {
-  width: 100%;
-  padding: 14px;
-  background: var(--color-gold);
-  color: #1a1635;
-  font-family: "DM Sans", sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.generate-button:hover {
-  background: var(--color-gold-hover);
-}
-
-.generate-button:active {
-  transform: scale(0.98);
-}
-
-.generate-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.generate-button.loading {
-  animation: pulse-opacity 1s ease-in-out infinite;
-}
-
-@keyframes pulse-opacity {
-  0%,
-  100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Story page card */
-.story-page {
-  background: var(--color-story-bg);
-  border-radius: 16px;
-  padding: 48px 56px;
-  box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2);
-  max-width: 680px;
-  margin: 0 auto;
-}
-
-/* Loading pulse animation */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.loading-pulse {
-  animation: pulse 1.5s infinite;
-}
-
-/* Custom range input - story length & max per page */
-input[type="range"].story-range {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--color-border-strong);
-}
-
-input[type="range"].story-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-gold);
-  border: none;
-  cursor: pointer;
-}
-
-input[type="range"].story-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-gold);
-  border: none;
-  cursor: pointer;
-}
-
-/* Ghost button / "Start a new story" */
-.ghost-button:hover {
-  color: var(--color-text-primary) !important;
-  border-color: var(--color-border-strong) !important;
-}
-
-/* Page nav buttons hover */
-.page-nav-btn:hover:not(:disabled) {
-  background: rgba(245, 200, 66, 0.25) !important;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
