@@ -123,3 +123,68 @@ body {
 .st-scroll-content::-webkit-scrollbar {
   display: none;
 }
+
+/* Story text - scales to ~75% of reading pane height */
+.st-story-text {
+  font-size: clamp(20px, 5.5vh, 32px);
+}
+
+/* Settings panel - base */
+.st-settings-header {
+  padding: 20px 20px 14px;
+}
+.st-settings-title {
+  font-size: 28px;
+}
+.st-settings-tagline {
+  font-size: 11px;
+}
+.st-settings-body {
+  padding: 24px 20px 28px;
+}
+.st-settings-sections > .st-settings-section {
+  margin-top: 28px;
+}
+.st-settings-sections > div {
+  margin-bottom: 4px;
+}
+
+/* Settings panel - compact on iPhone 15 and similar (viewport height ≤ 900px) */
+@media (max-height: 900px) {
+  .st-settings-panel .st-settings-header {
+    padding: 12px 16px 10px !important;
+  }
+  .st-settings-panel .st-settings-title {
+    font-size: 22px !important;
+  }
+  .st-settings-panel .st-settings-tagline {
+    font-size: 10px !important;
+  }
+  .st-settings-panel .st-settings-body {
+    padding: 10px 16px !important;
+  }
+  .st-settings-panel .st-settings-sections > div {
+    margin-top: 12px !important;
+  }
+  .st-settings-panel .st-settings-sections > div:first-child {
+    margin-top: 0 !important;
+  }
+  .st-settings-panel .st-input,
+  .st-settings-panel textarea.st-input {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+  .st-settings-panel .st-slider {
+    margin-top: 4px !important;
+  }
+  .st-settings-panel .st-settings-footer {
+    padding: 10px 16px 12px !important;
+  }
+  .st-settings-panel .st-settings-footer button {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+  .st-settings-panel .st-settings-section {
+    margin-top: 12px !important;
+  }
+}

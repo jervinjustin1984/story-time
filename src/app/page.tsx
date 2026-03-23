@@ -23,7 +23,11 @@ function loadConfig() {
     const data = JSON.parse(raw);
     return {
       storyLength: Number(data.storyLength) || 150,
-      readingAge: Number(data.readingAge) ?? 6,
+      readingAge: (() => {
+        const age = Number(data.readingAge) ?? 6;
+        if (age === 3) return 4; /* 3 years removed, map to 4–5 */
+        return age;
+      })(),
       theme: typeof data.theme === "string" ? data.theme : "",
       specifics: typeof data.specifics === "string" ? data.specifics : "",
       repeatWords: typeof data.repeatWords === "string" ? data.repeatWords : "",
@@ -321,7 +325,6 @@ export default function Home() {
   };
 
   const READING_AGES = [
-    { value: 3, label: "3 years" },
     { value: 4, label: "4–5 years" },
     { value: 6, label: "6–7 years" },
     { value: 8, label: "8–9 years" },
@@ -351,20 +354,22 @@ export default function Home() {
     "st-input w-full rounded-lg border bg-[var(--st-bg-input)] border-[var(--st-border-input)] text-[13px] text-[#c8bfe0] outline-none placeholder:text-[var(--st-text-hint)] box-border";
 
   const SettingsPanel = ({ onClose }: { onClose?: () => void }) => (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      className="flex min-h-0 flex-1 flex-col st-settings-panel"
+      data-mobile={onClose ? "true" : undefined}
+    >
       <header
-        className="flex items-start justify-between border-b border-[var(--st-border-subtle)] px-5 pb-3.5 pt-5"
-        style={{ padding: "20px 20px 14px" }}
+        className="flex items-start justify-between border-b border-[var(--st-border-subtle)] px-5 pb-3.5 pt-5 st-settings-header"
       >
         <div>
           <h2
-            className="m-0 mb-0.5 font-serif text-[28px] font-semibold tracking-tight text-[var(--st-gold)]"
-            style={{ fontFamily: "Georgia, serif", letterSpacing: "-0.01em" }}
+            className="m-0 mb-0.5 font-semibold tracking-tight text-[var(--st-gold)] st-settings-title"
+            style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif", letterSpacing: "-0.01em" }}
           >
             Story Time
           </h2>
           <p
-            className="m-0 text-[11px] text-[var(--st-text-muted)]"
+            className="m-0 text-[var(--st-text-muted)] st-settings-tagline"
             style={{ fontFamily: "sans-serif", letterSpacing: "0.05em" }}
           >
             bedtime stories, just for you
@@ -389,11 +394,8 @@ export default function Home() {
         )}
       </header>
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
-        style={{ padding: "16px 20px" }}
-      >
-        <div className="mt-0 first:mt-0 [&>div]:mt-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 st-settings-body">
+        <div className="st-settings-sections">
           <div>
             <label
               className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
@@ -421,7 +423,7 @@ export default function Home() {
             />
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="st-settings-section">
             <label
               className="mb-2 block text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
               style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
@@ -457,7 +459,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="st-settings-section">
             <label
               className="mb-2 block text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
               style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
@@ -493,7 +495,7 @@ export default function Home() {
             )}
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="st-settings-section">
             <label
               className="mb-2 block text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
               style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
@@ -503,13 +505,13 @@ export default function Home() {
             <textarea
               value={specifics}
               onChange={(e) => setSpecifics(e.target.value)}
-              rows={3}
+              rows={onClose ? 2 : 3}
               placeholder='e.g., "I want to include a polar bear named Pablo"'
               className={`${stInput} resize-none`}
             />
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="st-settings-section">
             <label
               className="mb-2 block text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
               style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
@@ -525,7 +527,7 @@ export default function Home() {
             />
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="st-settings-section">
             <label
               className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
               style={{ fontFamily: "sans-serif", margin: "0 0 8px" }}
@@ -555,7 +557,7 @@ export default function Home() {
       </div>
 
       <footer
-        className="border-t border-[var(--st-border-subtle)] bg-[var(--st-bg-page)] px-5 pb-[18px] pt-3.5 shrink-0"
+        className="st-settings-footer border-t border-[var(--st-border-subtle)] bg-[var(--st-bg-page)] shrink-0 px-5 pb-[18px] pt-3.5"
         style={{ padding: "14px 20px 18px" }}
       >
         <button
@@ -650,7 +652,7 @@ export default function Home() {
             {/* Page content area */}
             <div
               className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto st-scroll-content"
-              style={{ padding: "48px 4px 72px" }}
+              style={{ padding: "60px 4px 72px" }}
             >
               <div className="flex flex-1 flex-col items-center justify-center">
                 {isGenerating ? (
@@ -667,44 +669,32 @@ export default function Home() {
                     />
                   </div>
                 ) : currentPage === 0 ? (
-                  <div className="flex w-full flex-1 flex-col items-center">
-                    <div className="flex flex-1 items-center justify-center">
-                      <div className="text-center">
-                        <p
-                          className="mx-auto max-w-3xl text-center font-serif text-[26px] font-bold text-[var(--st-ink)]"
-                          style={{ fontFamily: "Georgia, serif" }}
-                        >
-                          {storyTitle || "Your Story"}
-                        </p>
-                        <p
-                          className="mt-2 font-serif text-sm italic text-[var(--st-ink-muted)]"
-                          style={{ fontFamily: "Georgia, serif", fontSize: "14px" }}
-                        >
-                          A bedtime story
-                        </p>
-                      </div>
-                    </div>
+                  <div className="relative flex w-full flex-1 items-center justify-center">
+                    <p
+                      className="mx-auto max-w-3xl text-center font-serif text-[26px] font-bold text-[var(--st-ink)]"
+                      style={{ fontFamily: "Georgia, serif" }}
+                    >
+                      {storyTitle || "Your Story"}
+                    </p>
                     <button
                       type="button"
                       onClick={() => setIsConfigOpen(true)}
-                      className="st-link mt-auto"
+                      className="st-link absolute bottom-0 left-0 right-0 text-center"
                       style={{ paddingBottom: "36px" }}
                     >
                       Start a new story
                     </button>
                   </div>
                 ) : currentPage === totalPages - 1 ? (
-                  <div className="flex w-full flex-1 flex-col items-center">
-                    <div className="flex flex-1 items-center justify-center">
-                      <p
-                        className="mx-auto max-w-3xl text-center font-serif text-[30px] font-bold italic text-[var(--st-ink)]"
-                        style={{ fontFamily: "Georgia, serif" }}
-                      >
-                        The End
-                      </p>
-                    </div>
+                  <div className="relative flex w-full flex-1 items-center justify-center">
+                    <p
+                      className="mx-auto max-w-3xl text-center font-serif text-[30px] font-bold italic text-[var(--st-ink)]"
+                      style={{ fontFamily: "Georgia, serif" }}
+                    >
+                      The End
+                    </p>
                     <div
-                      className="flex flex-wrap items-center justify-center gap-6"
+                      className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-6"
                       style={{ paddingBottom: "36px", gap: "24px" }}
                     >
                       <button
@@ -712,7 +702,7 @@ export default function Home() {
                         onClick={handleStartOver}
                         className="st-link"
                       >
-                        Restart from beginning
+                        Start over
                       </button>
                       <span className="st-link-muted">·</span>
                       <button
@@ -726,10 +716,9 @@ export default function Home() {
                   </div>
                 ) : (
                   <p
-                    className="mx-auto max-w-3xl text-center font-serif text-lg text-[var(--st-ink)]"
+                    className="st-story-text mx-auto max-w-3xl text-center font-serif text-[var(--st-ink)]"
                     style={{
                       fontFamily: "Georgia, serif",
-                      fontSize: "18px",
                       lineHeight: 1.95,
                       margin: 0,
                     }}
