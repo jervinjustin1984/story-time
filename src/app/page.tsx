@@ -1,5 +1,6 @@
 "use client";
 
+import { llmProviderLabel, type LlmProviderId } from "@/lib/llmLabels";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const STORAGE_KEY = "storyTime";
@@ -23,6 +24,9 @@ type StoredState = {
   lastStory?: string;
   lastStoryTitle?: string;
   lastStoryPage?: number;
+  /** Provider used for the last successful `/api/story` generation (server-resolved). */
+  lastStoryLlmProvider?: LlmProviderId;
+  lastStoryModel?: string;
   /** When set, overrides server LLM_PROVIDER for API calls. */
   llmProvider?: "openai" | "anthropic";
   openaiModel?: string;
@@ -56,6 +60,11 @@ function loadStored(): StoredState {
         typeof data.lastStoryPage === "number" && Number.isFinite(data.lastStoryPage)
           ? Math.max(0, Math.floor(data.lastStoryPage))
           : undefined,
+      lastStoryLlmProvider:
+        data.lastStoryLlmProvider === "openai" || data.lastStoryLlmProvider === "anthropic"
+          ? data.lastStoryLlmProvider
+          : undefined,
+      lastStoryModel: typeof data.lastStoryModel === "string" ? data.lastStoryModel : undefined,
       llmProvider:
         data.llmProvider === "openai" || data.llmProvider === "anthropic"
           ? data.llmProvider
@@ -563,6 +572,10 @@ export default function Home() {
   const [repeatWords, setRepeatWords] = useState(DEFAULT_CONFIG.repeatWords);
   const [storyText, setStoryText] = useState<string>("");
   const [storyTitle, setStoryTitle] = useState<string>("");
+  const [storyLlmMeta, setStoryLlmMeta] = useState<{
+    provider: LlmProviderId;
+    model: string;
+  } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isThemeGenerating, setIsThemeGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -594,10 +607,22 @@ export default function Home() {
       setStoryText(s.lastStory ?? "");
       setStoryTitle(s.lastStoryTitle ?? "");
       setCurrentPage(s.lastStoryPage ?? 0);
+      if (
+        s.lastStoryLlmProvider === "openai" ||
+        s.lastStoryLlmProvider === "anthropic"
+      ) {
+        setStoryLlmMeta({
+          provider: s.lastStoryLlmProvider,
+          model: (s.lastStoryModel ?? "").trim(),
+        });
+      } else {
+        setStoryLlmMeta(null);
+      }
       setIsConfigOpen(false);
     } else {
       setStoryText("");
       setStoryTitle("");
+      setStoryLlmMeta(null);
       setCurrentPage(0);
       setIsConfigOpen(true);
     }
@@ -698,8 +723,10 @@ export default function Home() {
       lastStory: storyText,
       lastStoryTitle: storyTitle,
       lastStoryPage: currentPage,
+      lastStoryLlmProvider: storyLlmMeta?.provider,
+      lastStoryModel: storyLlmMeta?.model?.trim() || undefined,
     });
-  }, [currentPage, storyText, storyTitle]);
+  }, [currentPage, storyText, storyTitle, storyLlmMeta]);
 
   const currentPageWordList = useMemo(() => {
     if (currentPage === 0 || currentPage === totalPages - 1) {
@@ -774,7 +801,12 @@ export default function Home() {
         throw new Error(data.error || "Failed to generate story.");
       }
 
-      const data: { story: string; title?: string } = await response.json();
+      const data: {
+        story: string;
+        title?: string;
+        llmProvider?: string;
+        model?: string;
+      } = await response.json();
 
       if (!data.story || typeof data.story !== "string") {
         throw new Error("Story text was missing from the response.");
@@ -782,8 +814,16 @@ export default function Home() {
 
       const title =
         typeof data.title === "string" ? data.title.trim() : "";
+      const resolvedMeta: { provider: LlmProviderId; model: string } | null =
+        data.llmProvider === "openai" || data.llmProvider === "anthropic"
+          ? {
+              provider: data.llmProvider,
+              model: typeof data.model === "string" ? data.model.trim() : "",
+            }
+          : null;
       setStoryText(data.story);
       setStoryTitle(title);
+      setStoryLlmMeta(resolvedMeta);
       goToPage(0);
 
       const base = loadStored();
@@ -801,6 +841,8 @@ export default function Home() {
         lastStory: data.story,
         lastStoryTitle: title,
         lastStoryPage: 0,
+        lastStoryLlmProvider: resolvedMeta?.provider,
+        lastStoryModel: resolvedMeta?.model || undefined,
       });
 
       if (closePanel) {
@@ -978,8 +1020,21 @@ export default function Home() {
                   </div>
                 ) : currentPage === 0 ? (
                   <div className="relative flex w-full flex-1 items-center justify-center">
+                    {storyLlmMeta && (
+                      <span
+                        className="pointer-events-auto absolute right-0 top-0 z-[1] max-w-[min(100%,12.5rem)] truncate rounded-full border border-[var(--st-ink-faint)] bg-[rgba(61,43,31,0.05)] px-2.5 py-1 text-[10px] font-normal leading-tight tracking-[0.02em] text-[var(--st-ink-muted)] sm:max-w-[14rem] sm:text-[11px]"
+                        style={{ fontFamily: "system-ui, sans-serif" }}
+                        title={
+                          storyLlmMeta.model
+                            ? `Model: ${storyLlmMeta.model}`
+                            : undefined
+                        }
+                      >
+                        Generated with {llmProviderLabel(storyLlmMeta.provider)}
+                      </span>
+                    )}
                     <p
-                      className="mx-auto max-w-3xl text-center font-serif text-[26px] font-bold text-[var(--st-ink)]"
+                      className="mx-auto max-w-3xl px-14 text-center font-serif text-[26px] font-bold text-[var(--st-ink)] sm:px-16"
                       style={{ fontFamily: "Georgia, serif" }}
                     >
                       {storyTitle || "Your Story"}

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: missingKey }, { status: 500 });
     }
 
-    const rawTheme = await createChatTextCompletion(
+    const { text: rawTheme } = await createChatTextCompletion(
       {
         system:
           "You suggest short, fun themes for children's stories. Themes should be 1–3 words long.",
