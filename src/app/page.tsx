@@ -23,7 +23,13 @@ type StoredState = {
   lastStory?: string;
   lastStoryTitle?: string;
   lastStoryPage?: number;
+  /** When set, overrides server LLM_PROVIDER for API calls. */
+  llmProvider?: "openai" | "anthropic";
+  openaiModel?: string;
+  anthropicModel?: string;
 };
+
+type LlmProviderMode = "default" | "openai" | "anthropic";
 
 function loadStored(): StoredState {
   if (typeof window === "undefined") {
@@ -50,6 +56,13 @@ function loadStored(): StoredState {
         typeof data.lastStoryPage === "number" && Number.isFinite(data.lastStoryPage)
           ? Math.max(0, Math.floor(data.lastStoryPage))
           : undefined,
+      llmProvider:
+        data.llmProvider === "openai" || data.llmProvider === "anthropic"
+          ? data.llmProvider
+          : undefined,
+      openaiModel: typeof data.openaiModel === "string" ? data.openaiModel : undefined,
+      anthropicModel:
+        typeof data.anthropicModel === "string" ? data.anthropicModel : undefined,
     };
   } catch {
     return { ...DEFAULT_CONFIG };
@@ -65,6 +78,20 @@ function saveStored(state: StoredState) {
   }
 }
 
+function buildLlmRequestFields(
+  mode: LlmProviderMode,
+  openai: string,
+  anthropic: string,
+): Record<string, string> {
+  const o: Record<string, string> = {};
+  if (mode === "openai" || mode === "anthropic") o.llmProvider = mode;
+  const ot = openai.trim();
+  const at = anthropic.trim();
+  if (ot) o.openaiModel = ot;
+  if (at) o.anthropicModel = at;
+  return o;
+}
+
 const READING_AGES = [
   { value: 4, label: "4–5 years" },
   { value: 6, label: "6–7 years" },
@@ -75,7 +102,7 @@ const READING_AGES = [
 const ST_INPUT_CLASS =
   "st-input w-full rounded-lg border bg-[var(--st-bg-input)] border-[var(--st-border-input)] text-[13px] text-[#c8bfe0] outline-none placeholder:text-[var(--st-text-hint)] box-border";
 
-function ShuffleIcon() {
+function SparklesIcon() {
   return (
     <svg
       width={17}
@@ -88,11 +115,137 @@ function ShuffleIcon() {
       strokeLinejoin="round"
       aria-hidden
     >
-      <polyline points="17 1 21 1 21 5" />
-      <path d="M3 11V3a2 2 0 0 1 2-2h8" />
-      <polyline points="21 13 21 21 13 21" />
-      <path d="M11 21H5a2 2 0 0 1-2-2v-8" />
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
     </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.65}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+function AdvancedLlmModal({
+  open,
+  onClose,
+  llmProviderMode,
+  setLlmProviderMode,
+  openaiModel,
+  setOpenaiModel,
+  anthropicModel,
+  setAnthropicModel,
+}: {
+  open: boolean;
+  onClose: () => void;
+  llmProviderMode: LlmProviderMode;
+  setLlmProviderMode: (v: LlmProviderMode) => void;
+  openaiModel: string;
+  setOpenaiModel: (v: string) => void;
+  anthropicModel: string;
+  setAnthropicModel: (v: string) => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div
+        role="presentation"
+        className="absolute inset-0 cursor-default bg-black/45 backdrop-blur-[1px]"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="advanced-llm-heading"
+        className="relative z-10 w-full max-w-md rounded-xl border border-[var(--st-border-subtle)] bg-[var(--st-bg-page)] px-5 py-4 shadow-xl"
+        style={{ boxShadow: "0 20px 50px rgba(0,0,0,0.35)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          id="advanced-llm-heading"
+          className="m-0 mb-1 font-semibold text-[var(--st-gold)]"
+          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+        >
+          Advanced
+        </h3>
+        <p className="mb-4 mt-0 text-xs leading-relaxed text-[var(--st-text-muted)]">
+          API keys stay on the server (env). Here you can override which provider runs and model IDs for this browser.
+        </p>
+
+        <label
+          className="st-settings-label mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+          style={{ fontFamily: "sans-serif" }}
+        >
+          Provider
+        </label>
+        <select
+          value={llmProviderMode}
+          onChange={(e) => setLlmProviderMode(e.target.value as LlmProviderMode)}
+          className={`${ST_INPUT_CLASS} mb-4 cursor-pointer py-2`}
+        >
+          <option value="default">Server default (from env)</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
+
+        <label
+          className="st-settings-label mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+          style={{ fontFamily: "sans-serif" }}
+        >
+          OpenAI model
+        </label>
+        <input
+          type="text"
+          value={openaiModel}
+          onChange={(e) => setOpenaiModel(e.target.value)}
+          placeholder="gpt-4o-mini"
+          className={`${ST_INPUT_CLASS} mb-4 py-2`}
+          autoComplete="off"
+        />
+
+        <label
+          className="st-settings-label mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-[var(--st-text-muted)]"
+          style={{ fontFamily: "sans-serif" }}
+        >
+          Anthropic model
+        </label>
+        <input
+          type="text"
+          value={anthropicModel}
+          onChange={(e) => setAnthropicModel(e.target.value)}
+          placeholder="claude-haiku-4-5"
+          className={`${ST_INPUT_CLASS} mb-5 py-2`}
+          autoComplete="off"
+        />
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full cursor-pointer rounded-xl border-none py-3 text-sm font-semibold !bg-[#e8d5a3] !text-[#1a1635]"
+          style={{ fontFamily: "sans-serif", padding: "12px" }}
+        >
+          Done
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -117,6 +270,7 @@ function SettingsPanel({
   isGenerating,
   error,
   onClose,
+  onOpenAdvanced,
   isMobile,
 }: {
   storyLength: number;
@@ -139,6 +293,7 @@ function SettingsPanel({
   isGenerating: boolean;
   error: string | null;
   onClose?: () => void;
+  onOpenAdvanced?: () => void;
   isMobile?: boolean;
 }) {
   return (
@@ -163,23 +318,36 @@ function SettingsPanel({
             bedtime stories, just for you
           </p>
         </div>
-        {onClose && (
-          <button
-            type="button"
-            aria-label="Close story settings"
-            onClick={onClose}
-            className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--st-text-muted)] hover:bg-white/5 md:hidden"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M6 6L18 18M6 18L18 6"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        )}
+        <div className="-mr-1 -mt-1 flex shrink-0 items-center gap-0.5">
+          {onOpenAdvanced && (
+            <button
+              type="button"
+              aria-label="Advanced settings"
+              title="Advanced settings"
+              onClick={onOpenAdvanced}
+              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--st-text-muted)] hover:bg-white/5"
+            >
+              <GearIcon />
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              aria-label="Close story settings"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--st-text-muted)] hover:bg-white/5 md:hidden"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M6 6L18 18M6 18L18 6"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 st-settings-body">
@@ -257,26 +425,26 @@ function SettingsPanel({
             >
               Theme
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-stretch gap-2">
               <input
                 type="text"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
                 placeholder='e.g., "space", "underwater", "jungle"'
-                className={ST_INPUT_CLASS}
+                className={ST_INPUT_CLASS.replace("w-full", "min-w-0 flex-1")}
               />
               <button
                 type="button"
                 onClick={handleRandomTheme}
                 disabled={isThemeGenerating}
-                className="flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--st-border-input)] text-[var(--st-text-muted)]"
+                className="flex w-[38px] shrink-0 cursor-pointer items-center justify-center self-stretch rounded-lg border border-[var(--st-border-input)] text-[var(--st-text-muted)]"
                 style={{
                   background: "rgba(255, 255, 255, 0.04)",
                 }}
                 title="Surprise me with a theme"
               >
-                <span className="sr-only">Generate random theme</span>
-                <ShuffleIcon />
+                <span className="sr-only">Surprise me with a random theme</span>
+                <SparklesIcon />
               </button>
             </div>
             {isThemeGenerating && (
@@ -398,6 +566,10 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isThemeGenerating, setIsThemeGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [llmProviderMode, setLlmProviderMode] = useState<LlmProviderMode>("default");
+  const [openaiModel, setOpenaiModel] = useState("");
+  const [anthropicModel, setAnthropicModel] = useState("");
   const skipNextSave = useRef(true);
   const lastClampedStoryText = useRef<string | null>(null);
 
@@ -409,6 +581,13 @@ export default function Home() {
     setSpecifics(s.specifics);
     setRepeatWords(s.repeatWords);
     setMaxWordsPerPage(s.maxWordsPerPage);
+    setLlmProviderMode(
+      s.llmProvider === "openai" || s.llmProvider === "anthropic"
+        ? s.llmProvider
+        : "default",
+    );
+    setOpenaiModel(s.openaiModel ?? "");
+    setAnthropicModel(s.anthropicModel ?? "");
 
     const savedStory = s.lastStory?.trim();
     if (savedStory) {
@@ -438,8 +617,21 @@ export default function Home() {
       specifics,
       repeatWords,
       maxWordsPerPage,
+      llmProvider: llmProviderMode === "default" ? undefined : llmProviderMode,
+      openaiModel: openaiModel.trim() || undefined,
+      anthropicModel: anthropicModel.trim() || undefined,
     });
-  }, [storyLength, readingAge, theme, specifics, repeatWords, maxWordsPerPage]);
+  }, [
+    storyLength,
+    readingAge,
+    theme,
+    specifics,
+    repeatWords,
+    maxWordsPerPage,
+    llmProviderMode,
+    openaiModel,
+    anthropicModel,
+  ]);
 
   const words = useMemo(
     () => (storyText ? storyText.trim().split(/\s+/) : []),
@@ -573,6 +765,7 @@ export default function Home() {
           theme,
           specifics,
           repeatWords,
+          ...buildLlmRequestFields(llmProviderMode, openaiModel, anthropicModel),
         }),
       });
 
@@ -602,6 +795,9 @@ export default function Home() {
         specifics,
         repeatWords,
         maxWordsPerPage,
+        llmProvider: llmProviderMode === "default" ? undefined : llmProviderMode,
+        openaiModel: openaiModel.trim() || undefined,
+        anthropicModel: anthropicModel.trim() || undefined,
         lastStory: data.story,
         lastStoryTitle: title,
         lastStoryPage: 0,
@@ -629,6 +825,10 @@ export default function Home() {
 
       const response = await fetch("/api/theme", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          buildLlmRequestFields(llmProviderMode, openaiModel, anthropicModel),
+        ),
       });
 
       if (!response.ok) {
@@ -682,6 +882,7 @@ export default function Home() {
           isThemeGenerating={isThemeGenerating}
           isGenerating={isGenerating}
           error={error}
+          onOpenAdvanced={() => setIsAdvancedOpen(true)}
           isMobile={false}
         />
       </aside>
@@ -720,6 +921,7 @@ export default function Home() {
                 isGenerating={isGenerating}
                 error={error}
                 onClose={() => setIsConfigOpen(false)}
+                onOpenAdvanced={() => setIsAdvancedOpen(true)}
                 isMobile={true}
               />
             </div>
@@ -883,6 +1085,17 @@ export default function Home() {
           </div>
         </main>
       </div>
+
+      <AdvancedLlmModal
+        open={isAdvancedOpen}
+        onClose={() => setIsAdvancedOpen(false)}
+        llmProviderMode={llmProviderMode}
+        setLlmProviderMode={setLlmProviderMode}
+        openaiModel={openaiModel}
+        setOpenaiModel={setOpenaiModel}
+        anthropicModel={anthropicModel}
+        setAnthropicModel={setAnthropicModel}
+      />
     </div>
   );
 }

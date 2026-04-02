@@ -1,20 +1,20 @@
-import OpenAI from "openai";
+import {
+  createChatTextCompletion,
+  formatLlmHttpError,
+  getMissingApiKeyMessage,
+  parseLlmOverridesFromBody,
+} from "@/lib/llm";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      { error: "OPENAI_API_KEY is not set on the server." },
-      { status: 500 },
-    );
-  }
-
   try {
     const body = await request.json();
+    const llmOverrides = parseLlmOverridesFromBody(body);
+
+    const missingKey = getMissingApiKeyMessage(llmOverrides);
+    if (missingKey) {
+      return NextResponse.json({ error: missingKey }, { status: 500 });
+    }
     const {
       storyLength,
       readingAge,
@@ -60,24 +60,16 @@ export async function POST(request: Request) {
 
     const prompt = promptParts.join(" ");
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.9,
-    });
-
     const raw =
-      completion.choices[0]?.message?.content?.trim() ??
+      (await createChatTextCompletion(
+        {
+          system:
+            "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
+          user: prompt,
+          temperature: 0.9,
+        },
+        llmOverrides,
+      )) ||
       "Once upon a time, something went wrong and the story could not be generated.";
 
     const blankLineIndex = raw.indexOf("\n\n");
@@ -96,12 +88,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ story, title });
   } catch (error) {
     console.error("Error generating story:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to generate story. Please try again.",
-      },
-      { status: 500 },
-    );
+
+    const baseMessage = "Failed to generate story. Please try again.";
+    const { error: message, code, status } = formatLlmHttpError(error, baseMessage);
+    return NextResponse.json({ error: message, code }, { status });
   }
 }
-
