@@ -30,9 +30,45 @@ export function getLlmProvider(): LlmProvider {
   return "openai";
 }
 
+/** Allowed model id shape for request overrides (alphanumeric, dot, dash, underscore). */
+const MODEL_ID_SAFE = /^[a-zA-Z0-9._-]{1,128}$/;
+
+export function isSafeModelId(s: string): boolean {
+  return MODEL_ID_SAFE.test(s);
+}
+
+export type LlmCallOverrides = {
+  provider?: LlmProvider;
+  openaiModel?: string;
+  anthropicModel?: string;
+};
+
+export function parseLlmOverridesFromBody(body: unknown): LlmCallOverrides {
+  if (!body || typeof body !== "object") return {};
+  const o = body as Record<string, unknown>;
+  const out: LlmCallOverrides = {};
+  const p = o.llmProvider;
+  if (p === "openai" || p === "anthropic") {
+    out.provider = p;
+  }
+  if (typeof o.openaiModel === "string") {
+    const t = o.openaiModel.trim();
+    if (t && isSafeModelId(t)) out.openaiModel = t;
+  }
+  if (typeof o.anthropicModel === "string") {
+    const t = o.anthropicModel.trim();
+    if (t && isSafeModelId(t)) out.anthropicModel = t;
+  }
+  return out;
+}
+
+function resolvedProvider(overrides?: LlmCallOverrides): LlmProvider {
+  return overrides?.provider ?? getLlmProvider();
+}
+
 /** Server-only: returns an error message if the active provider’s API key is missing. */
-export function getMissingApiKeyMessage(): string | null {
-  const p = getLlmProvider();
+export function getMissingApiKeyMessage(overrides?: LlmCallOverrides): string | null {
+  const p = resolvedProvider(overrides);
   if (p === "openai" && !process.env.OPENAI_API_KEY?.trim()) {
     return "OPENAI_API_KEY is not set on the server.";
   }
@@ -71,14 +107,19 @@ function anthropicTextFromMessage(
  */
 export async function createChatTextCompletion(
   params: ChatCompletionParams,
+  overrides?: LlmCallOverrides,
 ): Promise<string> {
   const temperature = params.temperature ?? 0.9;
-  const provider = getLlmProvider();
+  const provider = resolvedProvider(overrides);
 
   if (provider === "openai") {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model =
-      process.env.OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL;
+      (overrides?.openaiModel && isSafeModelId(overrides.openaiModel)
+        ? overrides.openaiModel
+        : undefined) ??
+      process.env.OPENAI_MODEL?.trim() ??
+      DEFAULT_OPENAI_MODEL;
     const completion = await openai.chat.completions.create({
       model,
       messages: [
@@ -99,7 +140,11 @@ export async function createChatTextCompletion(
     ...(anthropicBase ? { baseURL: anthropicBase } : {}),
   });
   const model =
-    process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
+    (overrides?.anthropicModel && isSafeModelId(overrides.anthropicModel)
+      ? overrides.anthropicModel
+      : undefined) ??
+    process.env.ANTHROPIC_MODEL?.trim() ??
+    DEFAULT_ANTHROPIC_MODEL;
   const maxOutputTokens = params.maxOutputTokens ?? STORY_MAX_OUTPUT_TOKENS;
 
   const msg = await anthropic.messages.create({

@@ -2,17 +2,19 @@ import {
   createChatTextCompletion,
   formatLlmHttpError,
   getMissingApiKeyMessage,
+  parseLlmOverridesFromBody,
 } from "@/lib/llm";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const missingKey = getMissingApiKeyMessage();
-  if (missingKey) {
-    return NextResponse.json({ error: missingKey }, { status: 500 });
-  }
-
   try {
     const body = await request.json();
+    const llmOverrides = parseLlmOverridesFromBody(body);
+
+    const missingKey = getMissingApiKeyMessage(llmOverrides);
+    if (missingKey) {
+      return NextResponse.json({ error: missingKey }, { status: 500 });
+    }
     const {
       storyLength,
       readingAge,
@@ -59,12 +61,15 @@ export async function POST(request: Request) {
     const prompt = promptParts.join(" ");
 
     const raw =
-      (await createChatTextCompletion({
-        system:
-          "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
-        user: prompt,
-        temperature: 0.9,
-      })) ||
+      (await createChatTextCompletion(
+        {
+          system:
+            "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
+          user: prompt,
+          temperature: 0.9,
+        },
+        llmOverrides,
+      )) ||
       "Once upon a time, something went wrong and the story could not be generated.";
 
     const blankLineIndex = raw.indexOf("\n\n");
