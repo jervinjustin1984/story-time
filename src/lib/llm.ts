@@ -117,13 +117,20 @@ function anthropicTextFromMessage(
     .join("");
 }
 
+export type ChatTextCompletionResult = {
+  text: string;
+  provider: LlmProvider;
+  /** Model id passed to the provider API for this call. */
+  model: string;
+};
+
 /**
- * Single user turn + system prompt; returns assistant text (trimmed).
+ * Single user turn + system prompt; returns assistant text (trimmed) and resolved provider/model.
  */
 export async function createChatTextCompletion(
   params: ChatCompletionParams,
   overrides?: LlmCallOverrides,
-): Promise<string> {
+): Promise<ChatTextCompletionResult> {
   const temperature = params.temperature ?? 0.9;
   const provider = resolvedProvider(overrides);
 
@@ -146,7 +153,8 @@ export async function createChatTextCompletion(
         ? { max_tokens: params.maxOutputTokens }
         : {}),
     });
-    return openaiAssistantText(completion.choices[0]?.message).trim();
+    const text = openaiAssistantText(completion.choices[0]?.message).trim();
+    return { text, provider: "openai", model };
   }
 
   const anthropicBase = resolvedAnthropicBaseURL();
@@ -170,7 +178,8 @@ export async function createChatTextCompletion(
     temperature,
   });
 
-  return anthropicTextFromMessage(msg).trim();
+  const text = anthropicTextFromMessage(msg).trim();
+  return { text, provider: "anthropic", model };
 }
 
 export function formatLlmHttpError(

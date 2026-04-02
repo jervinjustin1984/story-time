@@ -60,16 +60,18 @@ export async function POST(request: Request) {
 
     const prompt = promptParts.join(" ");
 
+    const completion = await createChatTextCompletion(
+      {
+        system:
+          "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
+        user: prompt,
+        temperature: 0.9,
+      },
+      llmOverrides,
+    );
+
     const raw =
-      (await createChatTextCompletion(
-        {
-          system:
-            "You are a friendly children's author who writes short, gentle stories for kids. Focus on kindness, curiosity, and safety.",
-          user: prompt,
-          temperature: 0.9,
-        },
-        llmOverrides,
-      )) ||
+      completion.text ||
       "Once upon a time, something went wrong and the story could not be generated.";
 
     const blankLineIndex = raw.indexOf("\n\n");
@@ -85,7 +87,12 @@ export async function POST(request: Request) {
       story = "Once upon a time, something went wrong and the story could not be generated.";
     }
 
-    return NextResponse.json({ story, title });
+    return NextResponse.json({
+      story,
+      title,
+      llmProvider: completion.provider,
+      model: completion.model,
+    });
   } catch (error) {
     console.error("Error generating story:", error);
 
