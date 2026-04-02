@@ -9,11 +9,23 @@ const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5";
 const STORY_MAX_OUTPUT_TOKENS = 4096;
 
 /**
+ * Read env at runtime via bracket access so Next.js does not inline `undefined`
+ * for missing keys at build time (which breaks when keys exist only at runtime).
+ */
+function serverEnv(key: string): string | undefined {
+  if (typeof globalThis.process === "undefined") return undefined;
+  const v = globalThis.process.env?.[key];
+  if (v == null || typeof v !== "string") return undefined;
+  const t = v.trim();
+  return t || undefined;
+}
+
+/**
  * Anthropic’s SDK posts to `/v1/messages` on top of this host.
  * If `ANTHROPIC_BASE_URL` already ends with `/v1`, requests become `/v1/v1/messages` and the API returns `not_found_error`.
  */
 function resolvedAnthropicBaseURL(): string | undefined {
-  const raw = process.env.ANTHROPIC_BASE_URL?.trim();
+  const raw = serverEnv("ANTHROPIC_BASE_URL");
   if (!raw) return undefined;
   let base = raw.replace(/\/+$/, "");
   while (base.endsWith("/v1")) {
@@ -23,7 +35,7 @@ function resolvedAnthropicBaseURL(): string | undefined {
 }
 
 export function getLlmProvider(): LlmProvider {
-  const raw = process.env.LLM_PROVIDER?.trim().toLowerCase();
+  const raw = serverEnv("LLM_PROVIDER")?.toLowerCase();
   if (raw === "anthropic" || raw === "claude") {
     return "anthropic";
   }
@@ -47,9 +59,12 @@ export function parseLlmOverridesFromBody(body: unknown): LlmCallOverrides {
   if (!body || typeof body !== "object") return {};
   const o = body as Record<string, unknown>;
   const out: LlmCallOverrides = {};
-  const p = o.llmProvider;
-  if (p === "openai" || p === "anthropic") {
-    out.provider = p;
+  const rawP = o.llmProvider;
+  const p = typeof rawP === "string" ? rawP.trim().toLowerCase() : "";
+  if (p === "openai") {
+    out.provider = "openai";
+  } else if (p === "anthropic" || p === "claude") {
+    out.provider = "anthropic";
   }
   if (typeof o.openaiModel === "string") {
     const t = o.openaiModel.trim();
@@ -69,10 +84,10 @@ function resolvedProvider(overrides?: LlmCallOverrides): LlmProvider {
 /** Server-only: returns an error message if the active provider’s API key is missing. */
 export function getMissingApiKeyMessage(overrides?: LlmCallOverrides): string | null {
   const p = resolvedProvider(overrides);
-  if (p === "openai" && !process.env.OPENAI_API_KEY?.trim()) {
+  if (p === "openai" && !serverEnv("OPENAI_API_KEY")) {
     return "OPENAI_API_KEY is not set on the server.";
   }
-  if (p === "anthropic" && !process.env.ANTHROPIC_API_KEY?.trim()) {
+  if (p === "anthropic" && !serverEnv("ANTHROPIC_API_KEY")) {
     return "ANTHROPIC_API_KEY is not set on the server.";
   }
   return null;
@@ -113,12 +128,12 @@ export async function createChatTextCompletion(
   const provider = resolvedProvider(overrides);
 
   if (provider === "openai") {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: serverEnv("OPENAI_API_KEY") });
     const model =
       (overrides?.openaiModel && isSafeModelId(overrides.openaiModel)
         ? overrides.openaiModel
         : undefined) ??
-      process.env.OPENAI_MODEL?.trim() ??
+      serverEnv("OPENAI_MODEL") ??
       DEFAULT_OPENAI_MODEL;
     const completion = await openai.chat.completions.create({
       model,
@@ -136,14 +151,14 @@ export async function createChatTextCompletion(
 
   const anthropicBase = resolvedAnthropicBaseURL();
   const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: serverEnv("ANTHROPIC_API_KEY"),
     ...(anthropicBase ? { baseURL: anthropicBase } : {}),
   });
   const model =
     (overrides?.anthropicModel && isSafeModelId(overrides.anthropicModel)
       ? overrides.anthropicModel
       : undefined) ??
-    process.env.ANTHROPIC_MODEL?.trim() ??
+    serverEnv("ANTHROPIC_MODEL") ??
     DEFAULT_ANTHROPIC_MODEL;
   const maxOutputTokens = params.maxOutputTokens ?? STORY_MAX_OUTPUT_TOKENS;
 
